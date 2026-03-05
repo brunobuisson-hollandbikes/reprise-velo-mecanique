@@ -3,170 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur Reprise Mécanique Holland Bikes</title>
+    <title>Reprise Vélo Mécanique - Holland Bikes</title>
     <style>
-        :root {
-            --hb-blue: #003057;
-            --hb-light-blue: #eef4f8;
-            --hb-grey: #f4f4f4;
-        }
-
+        :root { --hb-blue: #003057; --hb-light-blue: #eef4f8; --hb-grey: #f4f4f4; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--hb-light-blue); padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; width: 100%; position: relative; }
-        
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
         .header { text-align: center; margin-bottom: 20px; }
-        .logo { max-width: 280px; height: auto; margin-bottom: 10px; }
-        
+        .logo { max-width: 250px; height: auto; }
         h1 { color: var(--hb-blue); font-size: 1.3rem; border-bottom: 2px solid var(--hb-blue); padding-bottom: 10px; text-transform: uppercase; margin-top: 0; }
-
-        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--hb-blue); margin-top: 20px; text-transform: uppercase; border-left: 4px solid var(--hb-blue); padding-left: 10px; }
-
-        .form-group { margin-bottom: 15px; position: relative; }
-        label { display: block; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; color: #444; }
-        
-        .info-icon {
-            display: inline-block;
-            width: 15px; height: 15px; background: var(--hb-blue); color: white;
-            border-radius: 50%; font-size: 11px; text-align: center; line-height: 15px;
-            margin-left: 5px; cursor: help; position: relative;
-        }
-
-        .info-icon:hover::after {
-            content: attr(data-tooltip);
-            position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
-            background: #333; color: white; padding: 8px; border-radius: 4px;
-            width: 180px; font-size: 0.75rem; font-weight: normal; z-index: 10;
-        }
-
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; box-sizing: border-box; }
-        input[readonly] { background-color: var(--hb-grey); color: #666; border: 1px dashed #ccc; }
-
-        .result-card { background-color: var(--hb-blue); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; position: relative; }
-        .result-value { font-size: 2.5rem; font-weight: bold; display: block; }
-        .validity { font-size: 0.8rem; margin-top: 5px; opacity: 0.9; font-style: italic; }
-
+        .step { display: none; }
+        .step.active { display: block; }
+        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--hb-blue); margin-top: 20px; text-transform: uppercase; border-left: 4px solid var(--hb-blue); padding-left: 10px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; box-sizing: border-box; }
+        input[readonly] { background-color: var(--hb-grey); border: 1px dashed #ccc; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .result-card { background-color: var(--hb-blue); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
+        .result-value { font-size: 2.2rem; font-weight: bold; display: block; }
         .button-group { display: flex; gap: 10px; margin-top: 20px; }
-        
-        .btn {
-            flex: 1; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer;
-            text-decoration: none; text-align: center; transition: 0.2s; border: none; font-size: 0.9rem;
-        }
-        
-        .btn-print { background-color: #28a745; color: white; }
+        .btn { flex: 1; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 0.9rem; text-align: center; text-decoration: none; }
+        .btn-next { background-color: #28a745; color: white; }
         .btn-reset { background-color: #6c757d; color: white; }
+        .btn-back { background-color: #f4f4f4; color: #333; }
         .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); display: block; margin-top: 10px; }
         
-        .btn:hover { opacity: 0.85; }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-        /* PRINT STYLES */
-        @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; border: none; max-width: 100%; }
-            .btn, .info-icon, .btn-link, .section-title:first-of-type, .form-group:first-of-type { display: none !important; }
-            input { border: none !important; padding: 0 !important; font-weight: bold; }
-            .result-card { border: 2px solid var(--hb-blue); color: black !important; background: white !important; }
-            .result-value { color: var(--hb-blue); }
-            h1 { font-size: 1.5rem; }
+        @media print { 
+            .btn, .btn-link, .button-group, .section-title:first-of-type, #step1 { display: none !important; }
+            .container { box-shadow: none; border: none; padding: 0; }
+            input, select { border: none !important; background: transparent !important; padding: 2px !important; color: black !important; -webkit-appearance: none; }
+            h1 { font-size: 1.1rem; border: none; }
         }
     </style>
 </head>
 <body>
 
-<div class="container" id="printableArea">
+<div class="container">
     <div class="header">
         <img src="Logo HB_reconditionne_v1_bleu.png" alt="Holland Bikes" class="logo">
+    </div>
+
+    <div id="step1" class="step active">
         <h1>Calculateur de Reprise Vélo Mécanique</h1>
-    </div>
-
-    <div class="section-title">Informations Vélo</div>
-    
-    <div class="form-group">
-        <label>Date facture d'origine <span class="info-icon" data-tooltip="Sert à déterminer si le vélo a plus ou moins de 2 ans.">?</span></label>
-        <input type="date" id="B2" onchange="calculer()">
-    </div>
-
-    <div class="grid">
         <div class="form-group">
-            <label>Prix neuf (€ TTC) <span class="info-icon" data-tooltip="Prix d'achat initial figurant sur la facture.">?</span></label>
-            <input type="number" id="C2" placeholder="0.00" oninput="calculer()">
+            <label>Date facture d'origine</label>
+            <input type="date" id="B2" onchange="calculer()">
         </div>
+        <div class="grid">
+            <div class="form-group">
+                <label>Prix neuf (€ TTC)</label>
+                <input type="number" id="C2" placeholder="0.00" oninput="calculer()">
+            </div>
+            <div class="form-group">
+                <label>Devis réparation (€ TTC)</label>
+                <input type="number" id="J2" value="0" oninput="calculer()">
+            </div>
+        </div>
+        <div class="result-card">
+            <span style="font-size: 0.9rem;">PRIX REPRISE EN BON D'ACHAT</span>
+            <span class="result-value" id="K2">0.00 €</span>
+            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.9;">Offre valable 7 jours</div>
+        </div>
+        <div class="button-group">
+            <button class="btn btn-reset" onclick="location.reload()">Réinitialiser</button>
+            <button class="btn btn-next" id="nextBtn" onclick="goToStep2()" disabled style="opacity: 0.5;">Enregistrer la proposition →</button>
+        </div>
+        <a href="https://docs.google.com/document/d/11-49ROBzKyVPC0UHN13OYHFiUMuVrlBkncL97le9RHM/edit?usp=sharing" target="_blank" class="btn btn-link">
+            Voir la procédure CyclSoftware
+        </a>
+    </div>
+
+    <div id="step2" class="step">
+        <h1>Archivage du Dossier</h1>
+        
+        <div class="section-title">Informations Vélo</div>
+        <div class="grid">
+            <div class="form-group">
+                <label>Marque</label>
+                <input type="text" id="marque" placeholder="ex: Gazelle">
+            </div>
+            <div class="form-group">
+                <label>Modèle</label>
+                <input type="text" id="modele" placeholder="ex: Esprit">
+            </div>
+        </div>
+
+        <div class="section-title">Informations Client</div>
+        <div class="grid">
+            <div class="form-group">
+                <label>Nom</label>
+                <input type="text" id="nom">
+            </div>
+            <div class="form-group">
+                <label>Prénom</label>
+                <input type="text" id="prenom">
+            </div>
+        </div>
+        <div class="grid">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email">
+            </div>
+            <div class="form-group">
+                <label>Téléphone</label>
+                <input type="tel" id="tel">
+            </div>
+        </div>
+
         <div class="form-group">
-            <label>Devis réparation (€ TTC) <span class="info-icon" data-tooltip="Total des réparations nécessaires (pièces et MO).">?</span></label>
-            <input type="number" id="J2" value="0" oninput="calculer()">
+            <label>Magasin Holland Bikes</label>
+            <select id="magasin">
+                <option value="">-- Choisir un magasin --</option>
+                <option value="Paris 05">Paris 05</option>
+                <option value="Paris 15">Paris 15</option>
+                <option value="Paris 17">Paris 17</option>
+                <option value="Lagny">Lagny</option>
+                <option value="Lyon">Lyon</option>
+                <option value="EBSC">EBSC</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-back" onclick="goToStep1()">← Retour au calcul</button>
+            <button class="btn btn-next" onclick="enregistrer()">Finaliser & Imprimer</button>
         </div>
     </div>
-
-    <div class="section-title">Détails de l'offre</div>
-    
-    <div class="grid">
-        <div class="form-group">
-            <label>Valeur B2B HT</label>
-            <input type="text" id="D2" readonly>
-        </div>
-        <div class="form-group">
-            <label>Base Argus (€ TTC)</label>
-            <input type="text" id="H2" readonly>
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label>Révision & Garantie 12 mois <span class="info-icon" data-tooltip="Forfait couvrant les frais de structure, stockage, et la garantie légale.">?</span></label>
-        <input type="text" value="- 200.00 €" readonly style="color: #d9534f;">
-    </div>
-
-    <div class="result-card">
-        <span style="font-weight: bold; letter-spacing: 1px;">MONTANT DE REPRISE EN BON D'ACHAT</span>
-        <span class="result-value" id="K2">0.00 €</span>
-        <div class="validity">Offre valable 7 jours en magasin Holland Bikes</div>
-    </div>
-
-    <div class="button-group">
-        <button class="btn btn-reset" onclick="resetForm()">Réinitialiser</button>
-        <button class="btn btn-print" onclick="window.print()">Imprimer / PDF</button>
-    </div>
-
-    <a href="https://www.cyclsoftware.com/" target="_blank" class="btn btn-link">
-        → Consulter la procédure CyclSoftware
-    </a>
 </div>
 
 <script>
-function calculer() {
-    const dateAchatVal = document.getElementById('B2').value;
-    const prixTTCNeuf = parseFloat(document.getElementById('C2').value) || 0;
-    const fraisReparation = parseFloat(document.getElementById('J2').value) || 0;
-    const forfaitGarantie = 200;
+    let repriseFinale = 0;
 
-    if (!dateAchatVal || prixTTCNeuf === 0) return;
+    function calculer() {
+        const dateAchatVal = document.getElementById('B2').value;
+        const prixTTCNeuf = parseFloat(document.getElementById('C2').value) || 0;
+        const fraisReparation = parseFloat(document.getElementById('J2').value) || 0;
 
-    const D2 = prixTTCNeuf / 1.8;
-    document.getElementById('D2').value = D2.toFixed(2) + " €";
+        if (dateAchatVal && prixTTCNeuf > 0) {
+            const D2 = prixTTCNeuf / 1.8;
+            const E2 = D2 * 1.2;
+            const diff = new Date() - new Date(dateAchatVal);
+            const deuxAns = 365 * 2 * 24 * 60 * 60 * 1000;
+            let H2 = (diff < deuxAns) ? E2 * 0.9 : E2 * 0.7;
+            repriseFinale = Math.max(0, H2 - 200 - fraisReparation);
+            
+            document.getElementById('K2').innerText = repriseFinale.toFixed(2) + " €";
+            document.getElementById('nextBtn').disabled = false;
+            document.getElementById('nextBtn').style.opacity = "1";
+        }
+    }
 
-    const E2 = D2 * 1.2;
-    const dateAchat = new Date(dateAchatVal);
-    const aujourdhui = new Date();
-    const diffTemps = aujourdhui - dateAchat;
-    const deuxAnsEnMs = 365 * 2 * 24 * 60 * 60 * 1000;
+    function goToStep2() {
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+        window.scrollTo(0,0);
+    }
 
-    let H2 = (diffTemps < deuxAnsEnMs) ? E2 * 0.9 : E2 * 0.7;
-    document.getElementById('H2').value = H2.toFixed(2) + " €";
+    function goToStep1() {
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('step1').classList.add('active');
+        window.scrollTo(0,0);
+    }
 
-    let K2 = H2 - forfaitGarantie - fraisReparation;
-    if (K2 < 0) K2 = 0;
+    function enregistrer() {
+        const urlForm = "https://docs.google.com/forms/d/e/1FAIpQLSd1X7iMt3vCvkmfG4WlH9_-c66ILE-kL6AETBaPkU6FOaMjfQ/formResponse";
+        
+        const magasin = document.getElementById('magasin').value;
+        const nom = document.getElementById('nom').value;
+        const prenom = document.getElementById('prenom').value;
 
-    document.getElementById('K2').innerText = K2.toFixed(2) + " €";
-}
+        if (!magasin || !nom || !prenom) { 
+            alert("Merci de remplir au moins le Magasin, le Nom et le Prénom pour l'archivage."); 
+            return; 
+        }
 
-function resetForm() {
-    document.getElementById('B2').value = '';
-    document.getElementById('C2').value = '';
-    document.getElementById('J2').value = '0';
-    document.getElementById('D2').value = '';
-    document.getElementById('H2').value = '';
-    document.getElementById('K2').innerText = '0.00 €';
-}
+        const formData = new FormData();
+        formData.append("entry.680616715", magasin);
+        formData.append("entry.2016248799", document.getElementById('marque').value);
+        formData.append("entry.2113891221", document.getElementById('modele').value);
+        formData.append("entry.5663281", nom);
+        formData.append("entry.1065569574", prenom);
+        formData.append("entry.347062115", document.getElementById('email').value);
+        formData.append("entry.2141974441", document.getElementById('tel').value);
+
+        fetch(urlForm, {
+            method: "POST",
+            mode: "no-cors",
+            body: formData
+        }).then(() => {
+            alert("Proposition enregistrée dans la base de données Holland Bikes !");
+            window.print();
+        }).catch(err => {
+            alert("Erreur technique lors de l'enregistrement.");
+        });
+    }
 </script>
 
 </body>
