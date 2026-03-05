@@ -1,0 +1,165 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur Reprise Holland Bikes</title>
+    <style>
+        :root {
+            --hb-blue: #003057; /* Bleu Holland Bikes */
+            --hb-light-blue: #eef4f8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--hb-light-blue);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo {
+            max-width: 250px;
+            height: auto;
+        }
+
+        h1 {
+            color: var(--hb-blue);
+            font-size: 1.5rem;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--hb-blue);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--hb-blue);
+            outline: none;
+        }
+
+        .result-box {
+            background-color: var(--hb-blue);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <img src="Logo_HB_reconditionne_v1_bleu.png" alt="Holland Bikes Logo" class="logo">
+        <h1>Calculateur Reprise Mécanique</h1>
+    </div>
+
+    <div class="form-group">
+        <label for="dateAchat">Date d'achat du vélo (B2)</label>
+        <input type="date" id="dateAchat" onchange="calculerReprise()">
+    </div>
+
+    <div class="form-group">
+        <label for="prixAchat">Prix d'achat TTC (€) (C2)</label>
+        <input type="number" id="prixAchat" placeholder="Ex: 800" oninput="calculerReprise()">
+    </div>
+
+    <div class="form-group">
+        <label for="frais">Frais de remise en état estimés (€) (J2)</label>
+        <input type="number" id="frais" value="0" oninput="calculerReprise()">
+    </div>
+
+    <div class="result-box">
+        <span>VALEUR DE REPRISE ESTIMÉE</span>
+        <span class="result-value" id="resultat">0.00 €</span>
+        <p class="info-text">Basé sur la formule d'amortissement Holland Bikes</p>
+    </div>
+</div>
+
+<script>
+function calculerReprise() {
+    const dateAchatVal = document.getElementById('dateAchat').value;
+    const prixAchat = parseFloat(document.getElementById('prixAchat').value) || 0;
+    const frais = parseFloat(document.getElementById('frais').value) || 0;
+
+    if (!dateAchatVal || prixAchat === 0) {
+        document.getElementById('resultat').innerText = "0.00 €";
+        return;
+    }
+
+    // Calcul de l'ancienneté (D2 dans votre sheet)
+    const dateAchat = new Date(dateAchatVal);
+    const aujourdhui = new Date();
+    const diffTemps = Math.abs(aujourdhui - dateAchat);
+    const ancienneteAnnees = diffTemps / (1000 * 60 * 60 * 24 * 365.25);
+
+    // Logique de décote selon votre Sheet :
+    // -20% la 1ère année, puis -10% les suivantes
+    // Formule approchée de votre sheet : (C2 * 0.8) * (0.9 ^ (anciennete - 1))
+    
+    let valeurArgus = 0;
+    if (ancienneteAnnees <= 1) {
+        // Décote linéaire ou fixe pour la première année
+        valeurArgus = prixAchat * (1 - (0.20 * ancienneteAnnees));
+    } else {
+        // 20% la première année, puis 10% par année supplémentaire
+        valeurArgus = (prixAchat * 0.80) * Math.pow(0.90, (ancienneteAnnees - 1));
+    }
+
+    // Valeur de reprise finale = Argus - Frais (J2)
+    let repriseFinale = valeurArgus - frais;
+
+    // Sécurité pour ne pas avoir de chiffre négatif
+    if (repriseFinale < 0) repriseFinale = 0;
+
+    document.getElementById('resultat').innerText = repriseFinale.toFixed(2) + " €";
+}
+</script>
+
+</body>
+</html>
