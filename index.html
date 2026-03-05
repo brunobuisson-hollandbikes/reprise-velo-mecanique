@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -6,70 +6,59 @@
     <title>Calculateur Reprise Holland Bikes</title>
     <style>
         :root {
-            --hb-blue: #003057; /* Bleu Holland Bikes */
+            --hb-blue: #003057;
             --hb-light-blue: #eef4f8;
+            --hb-grey: #f4f4f4;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--hb-light-blue);
-            color: #333;
+            padding: 20px;
             display: flex;
             justify-content: center;
-            padding: 20px;
         }
 
         .container {
             background: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+        .header { text-align: center; margin-bottom: 20px; }
+        
+        /* Correction Logo : On utilise le nom exact du fichier envoyé */
+        .logo { max-width: 280px; height: auto; margin-bottom: 10px; }
 
-        .logo {
-            max-width: 250px;
-            height: auto;
-        }
+        h1 { color: var(--hb-blue); font-size: 1.4rem; border-bottom: 2px solid var(--hb-blue); padding-bottom: 10px; }
 
-        h1 {
-            color: var(--hb-blue);
-            font-size: 1.5rem;
-            margin-top: 10px;
-        }
+        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--hb-blue); margin-top: 20px; text-transform: uppercase; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: var(--hb-blue);
-        }
-
+        .form-group { margin-bottom: 15px; }
+        
+        label { display: block; margin-bottom: 5px; font-size: 0.95rem; font-weight: 500; }
+        
         input {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
             box-sizing: border-box;
         }
 
-        input:focus {
-            border-color: var(--hb-blue);
-            outline: none;
+        /* Champs non modifiables */
+        input[readonly] {
+            background-color: var(--hb-grey);
+            border-color: #ddd;
+            color: #666;
+            cursor: not-allowed;
         }
 
-        .result-box {
+        .result-card {
             background-color: var(--hb-blue);
             color: white;
             padding: 20px;
@@ -78,86 +67,105 @@
             text-align: center;
         }
 
-        .result-value {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
-        }
+        .result-label { font-size: 1rem; display: block; margin-bottom: 10px; }
+        .result-value { font-size: 2.2rem; font-weight: bold; }
 
-        .info-text {
-            font-size: 0.85rem;
-            margin-top: 10px;
-            opacity: 0.9;
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <img src="Logo_HB_reconditionne_v1_bleu.png" alt="Holland Bikes Logo" class="logo">
-        <h1>Calculateur Reprise Mécanique</h1>
+        <img src="Logo HB_reconditionne_v1_bleu.png" alt="Holland Bikes" class="logo">
+        <h1>Calculateur de Reprise</h1>
+    </div>
+
+    <div class="section-title">Saisie Magasin</div>
+    
+    <div class="form-group">
+        <label>Date sur facture d'origine achat client</label>
+        <input type="date" id="B2" onchange="calculer()">
+    </div>
+
+    <div class="grid">
+        <div class="form-group">
+            <label>Prix vélo facture d'origine (€ TTC)</label>
+            <input type="number" id="C2" placeholder="0.00" oninput="calculer()">
+        </div>
+        <div class="form-group">
+            <label>Devis réparation si nécessaire (€ TTC)</label>
+            <input type="number" id="J2" value="0" oninput="calculer()">
+        </div>
+    </div>
+
+    <div class="section-title">Détails du calcul (Auto)</div>
+    
+    <div class="grid">
+        <div class="form-group">
+            <label>Prix achat B2B (€ HT)</label>
+            <input type="text" id="D2" readonly>
+        </div>
+        <div class="form-group">
+            <label>Prix reprise max (€ TTC)</label>
+            <input type="text" id="E2" readonly>
+        </div>
     </div>
 
     <div class="form-group">
-        <label for="dateAchat">Date d'achat du vélo (B2)</label>
-        <input type="date" id="dateAchat" onchange="calculerReprise()">
+        <label>Base de reprise appliquée (selon âge)</label>
+        <input type="text" id="H2" readonly>
     </div>
 
     <div class="form-group">
-        <label for="prixAchat">Prix d'achat TTC (€) (C2)</label>
-        <input type="number" id="prixAchat" placeholder="Ex: 800" oninput="calculerReprise()">
+        <label>Forfait Reconditionnement & Garantie</label>
+        <input type="text" value="- 200.00 €" readonly>
     </div>
 
-    <div class="form-group">
-        <label for="frais">Frais de remise en état estimés (€) (J2)</label>
-        <input type="number" id="frais" value="0" oninput="calculerReprise()">
-    </div>
-
-    <div class="result-box">
-        <span>VALEUR DE REPRISE ESTIMÉE</span>
-        <span class="result-value" id="resultat">0.00 €</span>
-        <p class="info-text">Basé sur la formule d'amortissement Holland Bikes</p>
+    <div class="result-card">
+        <span class="result-label">PRIX REPRISE EN BON D'ACHAT</span>
+        <span class="result-value" id="K2">0.00 €</span>
     </div>
 </div>
 
 <script>
-function calculerReprise() {
-    const dateAchatVal = document.getElementById('dateAchat').value;
-    const prixAchat = parseFloat(document.getElementById('prixAchat').value) || 0;
-    const frais = parseFloat(document.getElementById('frais').value) || 0;
+function calculer() {
+    const dateAchatVal = document.getElementById('B2').value;
+    const prixTTCNeuf = parseFloat(document.getElementById('C2').value) || 0;
+    const fraisReparation = parseFloat(document.getElementById('J2').value) || 0;
+    const forfaitGarantie = 200; // I2
 
-    if (!dateAchatVal || prixAchat === 0) {
-        document.getElementById('resultat').innerText = "0.00 €";
-        return;
-    }
+    if (!dateAchatVal || prixTTCNeuf === 0) return;
 
-    // Calcul de l'ancienneté (D2 dans votre sheet)
+    // D2 = Prix achat B2B HT
+    const D2 = prixTTCNeuf / 1.8;
+    document.getElementById('D2').value = D2.toFixed(2) + " €";
+
+    // E2 = Prix reprise occasion max
+    const E2 = D2 * 1.2;
+    document.getElementById('E2').value = E2.toFixed(2) + " €";
+
+    // Calcul de l'âge
     const dateAchat = new Date(dateAchatVal);
     const aujourdhui = new Date();
-    const diffTemps = Math.abs(aujourdhui - dateAchat);
-    const ancienneteAnnees = diffTemps / (1000 * 60 * 60 * 24 * 365.25);
+    const diffTemps = aujourdhui - dateAchat;
+    const deuxAnsEnMs = 365 * 2 * 24 * 60 * 60 * 1000;
 
-    // Logique de décote selon votre Sheet :
-    // -20% la 1ère année, puis -10% les suivantes
-    // Formule approchée de votre sheet : (C2 * 0.8) * (0.9 ^ (anciennete - 1))
-    
-    let valeurArgus = 0;
-    if (ancienneteAnnees <= 1) {
-        // Décote linéaire ou fixe pour la première année
-        valeurArgus = prixAchat * (1 - (0.20 * ancienneteAnnees));
+    let H2 = 0;
+    if (diffTemps < deuxAnsEnMs) {
+        // F2 : < 2 ans = -10%
+        H2 = E2 * 0.9;
     } else {
-        // 20% la première année, puis 10% par année supplémentaire
-        valeurArgus = (prixAchat * 0.80) * Math.pow(0.90, (ancienneteAnnees - 1));
+        // G2 : > 2 ans = -30%
+        H2 = E2 * 0.7;
     }
+    document.getElementById('H2').value = H2.toFixed(2) + " €";
 
-    // Valeur de reprise finale = Argus - Frais (J2)
-    let repriseFinale = valeurArgus - frais;
+    // K2 = H2 - I2 (200) - J2
+    let K2 = H2 - forfaitGarantie - fraisReparation;
+    if (K2 < 0) K2 = 0;
 
-    // Sécurité pour ne pas avoir de chiffre négatif
-    if (repriseFinale < 0) repriseFinale = 0;
-
-    document.getElementById('resultat').innerText = repriseFinale.toFixed(2) + " €";
+    document.getElementById('K2').innerText = K2.toFixed(2) + " €";
 }
 </script>
 
