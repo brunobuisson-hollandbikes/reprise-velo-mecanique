@@ -4,35 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reprise Vélo Mécanique - Holland Bikes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --hb-blue: #003057; --hb-light-blue: #eef4f8; --hb-grey: #f4f4f4; }
+        :root { --hb-blue: #003057; --hb-light-blue: #eef4f8; --hb-grey: #f4f4f4; --hb-green: #28a745; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--hb-light-blue); padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
         .header { text-align: center; margin-bottom: 20px; }
-        .logo { max-width: 250px; height: auto; }
-        h1 { color: var(--hb-blue); font-size: 1.3rem; border-bottom: 2px solid var(--hb-blue); padding-bottom: 10px; text-transform: uppercase; margin-top: 0; }
+        
+        /* Correction Logo : Assure la visibilité */
+        .logo { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto 15px auto; }
+
+        /* BARRE DE PROGRESSION */
+        .progress-container { display: flex; justify-content: space-between; margin-bottom: 35px; position: relative; padding: 0 10px; }
+        .progress-container::before { content: ''; background: #ddd; position: absolute; top: 15px; left: 0; height: 4px; width: 100%; z-index: 1; }
+        .progress-step { width: 30px; height: 30px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; font-weight: bold; color: white; position: relative; }
+        .progress-step.active { background: var(--hb-blue); transform: scale(1.1); }
+        .progress-step.completed { background: var(--hb-green); }
+        .progress-label { position: absolute; top: 35px; font-size: 10px; color: var(--hb-blue); text-transform: uppercase; font-weight: bold; white-space: nowrap; }
+
+        h1 { color: var(--hb-blue); font-size: 1.2rem; border-bottom: 2px solid var(--hb-blue); padding-bottom: 10px; text-transform: uppercase; text-align: center; }
         .step { display: none; }
         .step.active { display: block; }
+        
         .section-title { font-size: 0.9rem; font-weight: bold; color: var(--hb-blue); margin-top: 20px; text-transform: uppercase; border-left: 4px solid var(--hb-blue); padding-left: 10px; margin-bottom: 15px; }
-        .form-group { margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; box-sizing: border-box; }
-        input[readonly] { background-color: var(--hb-grey); border: 1px dashed #ccc; }
+        
+        .info-icon { display: inline-block; width: 16px; height: 16px; background: var(--hb-blue); color: white; border-radius: 50%; font-size: 11px; text-align: center; line-height: 16px; margin-left: 5px; cursor: help; }
+        .info-icon:hover::after { content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px; border-radius: 4px; width: 220px; font-size: 0.75rem; z-index: 10; line-height: 1.3; font-weight: normal; }
+
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .result-card { background-color: var(--hb-blue); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
         .result-value { font-size: 2.2rem; font-weight: bold; display: block; }
-        .button-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { flex: 1; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 0.9rem; text-align: center; text-decoration: none; }
-        .btn-next { background-color: #28a745; color: white; }
+        
+        .button-group { display: flex; gap: 10px; margin-top: 25px; }
+        .btn { flex: 1; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; transition: 0.2s; }
+        .btn-next { background-color: var(--hb-green); color: white; }
         .btn-reset { background-color: #6c757d; color: white; }
         .btn-back { background-color: #f4f4f4; color: #333; }
-        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); display: block; margin-top: 10px; }
-        
-        @media print { 
-            .btn, .btn-link, .button-group, .section-title:first-of-type, #step1 { display: none !important; }
-            .container { box-shadow: none; border: none; padding: 0; }
-            input, select { border: none !important; background: transparent !important; padding: 2px !important; color: black !important; -webkit-appearance: none; }
-            h1 { font-size: 1.1rem; border: none; }
+        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); display: block; margin-top: 15px; text-decoration: none; border-radius: 6px; padding: 10px; font-size: 0.85rem; text-align: center; }
+
+        /* IMPRESSION */
+        #print-ticket { display: none; }
+        @media print {
+            .container { display: none; }
+            body { background: white; padding: 0; }
+            #print-ticket { display: block !important; width: 100%; padding: 40px; color: black; }
+            .ticket-header { text-align: center; border-bottom: 2px solid #003057; margin-bottom: 30px; padding-bottom: 20px; }
+            .ticket-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+            .ticket-total { background: #f4f4f4; padding: 25px; text-align: center; border: 2px solid #003057; border-radius: 10px; margin: 20px 0; }
+            .total-price { font-size: 3rem; font-weight: bold; color: #003057; }
+            .qr-section { text-align: center; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
+            #qrcode { display: inline-block; margin-top: 10px; }
         }
     </style>
 </head>
@@ -40,13 +64,19 @@
 
 <div class="container">
     <div class="header">
-        <img src="Logo HB_reconditionne_v1_bleu.png" alt="Holland Bikes" class="logo">
+        <img src="Logo HB_reconditionne_v1_bleu.png" alt="Logo Holland Bikes" class="logo">
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-step active" id="dot1">1 <span class="progress-label">Calcul</span></div>
+        <div class="progress-step" id="dot2">2 <span class="progress-label">Client</span></div>
+        <div class="progress-step" id="dot3">3 <span class="progress-label">Terminé</span></div>
     </div>
 
     <div id="step1" class="step active">
-        <h1>Calculateur de Reprise Vélo Mécanique</h1>
+        <h1>Reprise Vélo Mécanique</h1>
         <div class="form-group">
-            <label>Date facture d'origine</label>
+            <label>Date facture d'origine <span class="info-icon" data-tooltip="Détermine la décote : < 2 ans (-10%) ou > 2 ans (-30%) de la base Argus.">?</span></label>
             <input type="date" id="B2" onchange="calculer()">
         </div>
         <div class="grid">
@@ -55,61 +85,35 @@
                 <input type="number" id="C2" placeholder="0.00" oninput="calculer()">
             </div>
             <div class="form-group">
-                <label>Devis réparation (€ TTC)</label>
+                <label>Réparations (€ TTC)</label>
                 <input type="number" id="J2" value="0" oninput="calculer()">
             </div>
         </div>
         <div class="result-card">
-            <span style="font-size: 0.9rem;">PRIX REPRISE EN BON D'ACHAT</span>
+            <span style="font-size: 0.85rem; font-weight: bold; opacity: 0.9;">VALEUR DE REPRISE ESTIMÉE</span>
             <span class="result-value" id="K2">0.00 €</span>
-            <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.9;">Offre valable 7 jours</div>
         </div>
         <div class="button-group">
-            <button class="btn btn-reset" onclick="location.reload()">Réinitialiser</button>
-            <button class="btn btn-next" id="nextBtn" onclick="goToStep2()" disabled style="opacity: 0.5;">Enregistrer la proposition →</button>
+            <button class="btn btn-reset" onclick="location.reload()">Reset</button>
+            <button class="btn btn-next" id="nextBtn" onclick="goToStep2()" disabled style="opacity: 0.5;">Suivant →</button>
         </div>
         <a href="https://docs.google.com/document/d/11-49ROBzKyVPC0UHN13OYHFiUMuVrlBkncL97le9RHM/edit?usp=sharing" target="_blank" class="btn btn-link">
-            Voir la procédure CyclSoftware
+            Consulter la procédure CycleSoftware
         </a>
     </div>
 
     <div id="step2" class="step">
-        <h1>Archivage du Dossier</h1>
-        
-        <div class="section-title">Informations Vélo</div>
+        <h1>Détails & Archivage</h1>
         <div class="grid">
-            <div class="form-group">
-                <label>Marque</label>
-                <input type="text" id="marque" placeholder="ex: Gazelle">
-            </div>
-            <div class="form-group">
-                <label>Modèle</label>
-                <input type="text" id="modele" placeholder="ex: Esprit">
-            </div>
-        </div>
-
-        <div class="section-title">Informations Client</div>
-        <div class="grid">
-            <div class="form-group">
-                <label>Nom</label>
-                <input type="text" id="nom">
-            </div>
-            <div class="form-group">
-                <label>Prénom</label>
-                <input type="text" id="prenom">
-            </div>
+            <div class="form-group"><label>Marque</label><input type="text" id="marque" placeholder="ex: Gazelle"></div>
+            <div class="form-group"><label>Modèle</label><input type="text" id="modele" placeholder="ex: Esprit"></div>
         </div>
         <div class="grid">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email">
-            </div>
-            <div class="form-group">
-                <label>Téléphone</label>
-                <input type="tel" id="tel">
-            </div>
+            <div class="form-group"><label>Nom</label><input type="text" id="nom"></div>
+            <div class="form-group"><label>Prénom</label><input type="text" id="prenom"></div>
         </div>
-
+        <div class="form-group"><label>Email</label><input type="email" id="email"></div>
+        <div class="form-group"><label>Téléphone</label><input type="tel" id="tel"></div>
         <div class="form-group">
             <label>Magasin Holland Bikes</label>
             <select id="magasin">
@@ -122,81 +126,115 @@
                 <option value="EBSC">EBSC</option>
             </select>
         </div>
-
         <div class="button-group">
-            <button class="btn btn-back" onclick="goToStep1()">← Retour au calcul</button>
+            <button class="btn btn-back" onclick="goToStep1()">← Retour</button>
             <button class="btn btn-next" onclick="enregistrer()">Finaliser & Imprimer</button>
         </div>
     </div>
 </div>
 
+<div id="print-ticket">
+    <div class="ticket-header">
+        <img src="Logo HB_reconditionne_v1_bleu.png" style="width: 280px;">
+        <h2 style="color: #003057; margin-top: 20px; letter-spacing: 1px;">OFFRE DE REPRISE VÉLO</h2>
+    </div>
+    <div class="ticket-grid">
+        <div>
+            <p><strong>Magasin :</strong> <span id="p-magasin"></span></p>
+            <p><strong>Client :</strong> <span id="p-client"></span></p>
+            <p><strong>Vérifié le :</strong> <span id="p-date-offre"></span></p>
+        </div>
+        <div>
+            <p><strong>Vélo :</strong> <span id="p-velo"></span></p>
+            <p><strong>Achat d'origine :</strong> <span id="p-date-achat"></span></p>
+            <p><strong>Prix neuf :</strong> <span id="p-prix-neuf"></span> €</p>
+        </div>
+    </div>
+    <div style="border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 15px 0;">
+        <p>Base Argus occasion : <span id="p-argus"></span> € TTC</p>
+        <p style="color: #d9534f;">Frais de remise en état : - <span id="p-repa"></span> € TTC</p>
+        <p style="color: #d9534f;">Forfait Reconditionnement & Garantie : - 200.00 € TTC</p>
+    </div>
+    <div class="ticket-total">
+        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">VALEUR DE REPRISE EN BON D'ACHAT</div>
+        <div class="total-price" id="p-total"></div>
+    </div>
+    <div class="qr-section">
+        <p style="font-size: 0.9rem; margin-bottom: 10px;"><strong>Envie de changer ?</strong> Scannez pour découvrir nos vélos neufs :</p>
+        <div id="qrcode"></div>
+    </div>
+    <div class="footer-info">
+        <p>Offre valable 7 jours. Voir conditions de reprise en magasin.</p>
+        <p style="font-size: 1.1rem; font-weight: bold; color: #003057; margin-top: 10px;">Holland Bikes - Find Your Freedom</p>
+    </div>
+</div>
+
 <script>
-    let repriseFinale = 0;
+    let repriseFinale = 0; let baseArgus = 0;
+    const qrContainer = document.getElementById("qrcode");
+    new QRCode(qrContainer, { text: "https://www.hollandbikes.com/fr/110-velos", width: 100, height: 100 });
 
     function calculer() {
         const dateAchatVal = document.getElementById('B2').value;
         const prixTTCNeuf = parseFloat(document.getElementById('C2').value) || 0;
         const fraisReparation = parseFloat(document.getElementById('J2').value) || 0;
-
         if (dateAchatVal && prixTTCNeuf > 0) {
-            const D2 = prixTTCNeuf / 1.8;
-            const E2 = D2 * 1.2;
+            const D2 = prixTTCNeuf / 1.8; const E2 = D2 * 1.2;
             const diff = new Date() - new Date(dateAchatVal);
-            const deuxAns = 365 * 2 * 24 * 60 * 60 * 1000;
-            let H2 = (diff < deuxAns) ? E2 * 0.9 : E2 * 0.7;
-            repriseFinale = Math.max(0, H2 - 200 - fraisReparation);
-            
+            baseArgus = (diff < 63072000000) ? E2 * 0.9 : E2 * 0.7;
+            repriseFinale = Math.max(0, baseArgus - 200 - fraisReparation);
             document.getElementById('K2').innerText = repriseFinale.toFixed(2) + " €";
-            document.getElementById('nextBtn').disabled = false;
-            document.getElementById('nextBtn').style.opacity = "1";
+            document.getElementById('nextBtn').disabled = false; document.getElementById('nextBtn').style.opacity = "1";
+            document.getElementById('dot1').classList.add('completed');
         }
     }
 
-    function goToStep2() {
-        document.getElementById('step1').classList.remove('active');
-        document.getElementById('step2').classList.add('active');
-        window.scrollTo(0,0);
+    function goToStep2() { 
+        document.getElementById('step1').classList.remove('active'); 
+        document.getElementById('step2').classList.add('active'); 
+        document.getElementById('dot2').classList.add('active');
+        window.scrollTo(0,0); 
     }
 
-    function goToStep1() {
-        document.getElementById('step2').classList.remove('active');
-        document.getElementById('step1').classList.add('active');
-        window.scrollTo(0,0);
+    function goToStep1() { 
+        document.getElementById('step2').classList.remove('active'); 
+        document.getElementById('step1').classList.add('active'); 
+        document.getElementById('dot2').classList.remove('active');
     }
 
     function enregistrer() {
         const urlForm = "https://docs.google.com/forms/d/e/1FAIpQLSd1X7iMt3vCvkmfG4WlH9_-c66ILE-kL6AETBaPkU6FOaMjfQ/formResponse";
+        if (!document.getElementById('magasin').value || !document.getElementById('nom').value) { alert("Magasin et Nom requis."); return; }
         
-        const magasin = document.getElementById('magasin').value;
-        const nom = document.getElementById('nom').value;
-        const prenom = document.getElementById('prenom').value;
-
-        if (!magasin || !nom || !prenom) { 
-            alert("Merci de remplir au moins le Magasin, le Nom et le Prénom pour l'archivage."); 
-            return; 
-        }
+        // Remplir ticket
+        document.getElementById('p-magasin').innerText = document.getElementById('magasin').value;
+        document.getElementById('p-client').innerText = document.getElementById('nom').value + " " + document.getElementById('prenom').value;
+        document.getElementById('p-date-offre').innerText = new Date().toLocaleDateString();
+        document.getElementById('p-velo').innerText = document.getElementById('marque').value + " " + document.getElementById('modele').value;
+        document.getElementById('p-date-achat').innerText = document.getElementById('B2').value;
+        document.getElementById('p-prix-neuf').innerText = document.getElementById('C2').value;
+        document.getElementById('p-argus').innerText = baseArgus.toFixed(2);
+        document.getElementById('p-repa').innerText = document.getElementById('J2').value;
+        document.getElementById('p-total').innerText = repriseFinale.toFixed(2) + " €";
 
         const formData = new FormData();
-        formData.append("entry.680616715", magasin);
+        formData.append("entry.680616715", document.getElementById('magasin').value);
         formData.append("entry.2016248799", document.getElementById('marque').value);
         formData.append("entry.2113891221", document.getElementById('modele').value);
-        formData.append("entry.5663281", nom);
-        formData.append("entry.1065569574", prenom);
+        formData.append("entry.5663281", document.getElementById('nom').value);
+        formData.append("entry.1065569574", document.getElementById('prenom').value);
         formData.append("entry.347062115", document.getElementById('email').value);
         formData.append("entry.2141974441", document.getElementById('tel').value);
+        formData.append("entry.797525252", repriseFinale.toFixed(2));
+        formData.append("entry.1274849700", document.getElementById('J2').value);
+        formData.append("entry.1463105894", document.getElementById('B2').value);
 
-        fetch(urlForm, {
-            method: "POST",
-            mode: "no-cors",
-            body: formData
-        }).then(() => {
-            alert("Proposition enregistrée dans la base de données Holland Bikes !");
+        fetch(urlForm, { method: "POST", mode: "no-cors", body: formData }).then(() => {
+            document.getElementById('dot2').classList.add('completed');
+            document.getElementById('dot3').classList.add('active', 'completed');
             window.print();
-        }).catch(err => {
-            alert("Erreur technique lors de l'enregistrement.");
         });
     }
 </script>
-
 </body>
 </html>
