@@ -10,11 +10,8 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--hb-light-blue); padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
         .header { text-align: center; margin-bottom: 20px; }
-        
-        /* Correction Logo : Assure la visibilité */
         .logo { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto 15px auto; }
 
-        /* BARRE DE PROGRESSION */
         .progress-container { display: flex; justify-content: space-between; margin-bottom: 35px; position: relative; padding: 0 10px; }
         .progress-container::before { content: ''; background: #ddd; position: absolute; top: 15px; left: 0; height: 4px; width: 100%; z-index: 1; }
         .progress-step { width: 30px; height: 30px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; font-weight: bold; color: white; position: relative; }
@@ -26,12 +23,15 @@
         .step { display: none; }
         .step.active { display: block; }
         
-        .section-title { font-size: 0.9rem; font-weight: bold; color: var(--hb-blue); margin-top: 20px; text-transform: uppercase; border-left: 4px solid var(--hb-blue); padding-left: 10px; margin-bottom: 15px; }
         .form-group { margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; }
         
         .info-icon { display: inline-block; width: 16px; height: 16px; background: var(--hb-blue); color: white; border-radius: 50%; font-size: 11px; text-align: center; line-height: 16px; margin-left: 5px; cursor: help; }
-        .info-icon:hover::after { content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px; border-radius: 4px; width: 220px; font-size: 0.75rem; z-index: 10; line-height: 1.3; font-weight: normal; }
+        .info-icon:hover::after { 
+            content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); 
+            background: #333; color: white; padding: 12px; border-radius: 6px; width: 280px; font-size: 0.75rem; 
+            z-index: 10; line-height: 1.4; font-weight: normal; text-align: left; white-space: pre-line;
+        }
 
         input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -39,14 +39,12 @@
         .result-value { font-size: 2.2rem; font-weight: bold; display: block; }
         
         .button-group { display: flex; gap: 10px; margin-top: 25px; }
-        .btn { flex: 1; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; transition: 0.2s; }
+        .btn { flex: 1; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; transition: 0.2s; text-decoration: none; display: inline-block; }
         .btn-next { background-color: var(--hb-green); color: white; }
         .btn-reset { background-color: #6c757d; color: white; }
         .btn-back { background-color: #f4f4f4; color: #333; }
-        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); display: block; margin-top: 15px; text-decoration: none; border-radius: 6px; padding: 10px; font-size: 0.85rem; text-align: center; }
+        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); margin-top: 10px; font-size: 0.85rem; }
 
-        /* IMPRESSION */
-        #print-ticket { display: none; }
         @media print {
             .container { display: none; }
             body { background: white; padding: 0; }
@@ -58,6 +56,7 @@
             .qr-section { text-align: center; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
             #qrcode { display: inline-block; margin-top: 10px; }
         }
+        #print-ticket { display: none; }
     </style>
 </head>
 <body>
@@ -76,7 +75,7 @@
     <div id="step1" class="step active">
         <h1>Reprise Vélo Mécanique</h1>
         <div class="form-group">
-            <label>Date facture d'origine <span class="info-icon" data-tooltip="Détermine la décote : < 2 ans (-10%) ou > 2 ans (-30%) de la base Argus.">?</span></label>
+            <label>Date facture d'origine <span class="info-icon" data-tooltip="Ancienneté : < 2 ans (-10% décote) ou > 2 ans (-30% décote).">?</span></label>
             <input type="date" id="B2" onchange="calculer()">
         </div>
         <div class="grid">
@@ -85,7 +84,7 @@
                 <input type="number" id="C2" placeholder="0.00" oninput="calculer()">
             </div>
             <div class="form-group">
-                <label>Réparations (€ TTC)</label>
+                <label>Frais de remise en état <span class="info-icon" data-tooltip="Cahier des charges : &#10; - Pneus et chambres à air &#10; - Patins / Plaquettes de freins &#10; - Chaîne, cassette, pignons &#10; - Voilage roues / Rayonnage &#10; - Câblerie (freins/vitesses) &#10; - Éclairage et accessoires">?</span></label>
                 <input type="number" id="J2" value="0" oninput="calculer()">
             </div>
         </div>
@@ -97,9 +96,11 @@
             <button class="btn btn-reset" onclick="location.reload()">Reset</button>
             <button class="btn btn-next" id="nextBtn" onclick="goToStep2()" disabled style="opacity: 0.5;">Suivant →</button>
         </div>
-        <a href="https://docs.google.com/document/d/11-49ROBzKyVPC0UHN13OYHFiUMuVrlBkncL97le9RHM/edit?usp=sharing" target="_blank" class="btn btn-link">
-            Consulter la procédure CycleSoftware
-        </a>
+        
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 5px;">
+            <a href="https://docs.google.com/document/d/11-49ROBzKyVPC0UHN13OYHFiUMuVrlBkncL97le9RHM/edit?usp=sharing" target="_blank" class="btn btn-link">📖 Procédure CycleSoftware</a>
+            <a href="https://docs.google.com/spreadsheets/d/16ZqaaoAL9ltRXSFkW7Rmk_-g4QwA92sv4Qek_bNZNwQ/edit?gid=1978585441#gid=1978585441" target="_blank" class="btn btn-link">📊 Archives des reprises</a>
+        </div>
     </div>
 
     <div id="step2" class="step">
@@ -136,13 +137,13 @@
 <div id="print-ticket">
     <div class="ticket-header">
         <img src="Logo HB_reconditionne_v1_bleu.png" style="width: 280px;">
-        <h2 style="color: #003057; margin-top: 20px; letter-spacing: 1px;">OFFRE DE REPRISE VÉLO</h2>
+        <h2 style="color: #003057; margin-top: 20px;">OFFRE DE REPRISE VÉLO</h2>
     </div>
     <div class="ticket-grid">
         <div>
             <p><strong>Magasin :</strong> <span id="p-magasin"></span></p>
             <p><strong>Client :</strong> <span id="p-client"></span></p>
-            <p><strong>Vérifié le :</strong> <span id="p-date-offre"></span></p>
+            <p><strong>Date :</strong> <span id="p-date-offre"></span></p>
         </div>
         <div>
             <p><strong>Vélo :</strong> <span id="p-velo"></span></p>
@@ -160,12 +161,11 @@
         <div class="total-price" id="p-total"></div>
     </div>
     <div class="qr-section">
-        <p style="font-size: 0.9rem; margin-bottom: 10px;"><strong>Envie de changer ?</strong> Scannez pour découvrir nos vélos neufs :</p>
+        <p style="font-size: 0.9rem; margin-bottom: 10px;"><strong>Envie de changer ?</strong> Scannez pour voir nos vélos neufs :</p>
         <div id="qrcode"></div>
     </div>
-    <div class="footer-info">
-        <p>Offre valable 7 jours. Voir conditions de reprise en magasin.</p>
-        <p style="font-size: 1.1rem; font-weight: bold; color: #003057; margin-top: 10px;">Holland Bikes - Find Your Freedom</p>
+    <div class="footer-info" style="text-align:center; margin-top:20px;">
+        <p>Offre valable 7 jours. Holland Bikes - Find Your Freedom</p>
     </div>
 </div>
 
@@ -206,7 +206,6 @@
         const urlForm = "https://docs.google.com/forms/d/e/1FAIpQLSd1X7iMt3vCvkmfG4WlH9_-c66ILE-kL6AETBaPkU6FOaMjfQ/formResponse";
         if (!document.getElementById('magasin').value || !document.getElementById('nom').value) { alert("Magasin et Nom requis."); return; }
         
-        // Remplir ticket
         document.getElementById('p-magasin').innerText = document.getElementById('magasin').value;
         document.getElementById('p-client').innerText = document.getElementById('nom').value + " " + document.getElementById('prenom').value;
         document.getElementById('p-date-offre').innerText = new Date().toLocaleDateString();
