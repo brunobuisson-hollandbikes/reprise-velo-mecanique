@@ -26,18 +26,26 @@
         .form-group { margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; font-size: 0.9rem; font-weight: 600; color: #333; }
         
-        .info-icon { display: inline-block; width: 16px; height: 16px; background: var(--hb-blue); color: white; border-radius: 50%; font-size: 11px; text-align: center; line-height: 16px; margin-left: 5px; cursor: help; }
-        .info-icon:hover::after { 
-            content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); 
-            background: #333; color: white; padding: 12px; border-radius: 6px; width: 280px; font-size: 0.75rem; 
-            z-index: 10; line-height: 1.4; font-weight: normal; text-align: left; white-space: pre-line;
+        /* Correction de la bulle d'info */
+        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: var(--hb-blue); color: white; border-radius: 50%; font-size: 12px; font-weight: bold; margin-left: 5px; cursor: help; position: relative; }
+        .info-icon::after {
+            content: attr(data-tooltip); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
+            background: #222; color: #fff; padding: 10px 14px; border-radius: 6px; width: max-content; max-width: 280px;
+            font-size: 0.8rem; line-height: 1.4; white-space: pre-wrap; text-align: left;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
+        .info-icon::before {
+            content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            border-width: 6px; border-style: solid; border-color: #222 transparent transparent transparent;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 1000;
+        }
+        .info-icon:hover::after, .info-icon:hover::before { opacity: 1; visibility: visible; }
 
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+        input[type="number"], input[type="date"], input[type="text"], input[type="email"], input[type="tel"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         .calc-details { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; margin-bottom: 15px; color: #444; }
-        .calc-details p { margin: 5px 0; display: flex; justify-content: space-between; }
+        .calc-details p { margin: 6px 0; display: flex; justify-content: space-between; align-items: center; }
         .calc-details p strong { color: var(--hb-blue); }
         .calc-decote { color: #d9534f; font-weight: bold; }
 
@@ -56,8 +64,8 @@
         #vaeModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; }
         
-        /* Style spécifique impression */
-        #print-ticket { display: none; }
+        #bromptonContainer { display: none; background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; margin-top: -5px; margin-bottom: 15px; font-size: 0.9rem; }
+        
         @media print {
             .container { display: none; }
             #print-ticket { display: block !important; width: 100%; padding: 20px; color: black; }
@@ -67,6 +75,7 @@
             .total-price-print { font-size: 2.8rem; font-weight: bold; color: #003057; }
             .qr-print { text-align: center; margin-top: 20px; }
         }
+        #print-ticket { display: none; }
     </style>
 </head>
 <body>
@@ -106,6 +115,13 @@
             </select>
         </div>
 
+        <div id="bromptonContainer">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="isBrompton" style="width: auto; margin-right: 10px;" onchange="calculer()">
+                Ce vélo est-il un Brompton ?
+            </label>
+        </div>
+
         <div class="grid">
             <div class="form-group">
                 <label>Date achat d'origine 
@@ -120,19 +136,16 @@
         </div>
 
         <div class="form-group">
-            <label>Devis réparation si nécessaire (€ TTC) <span class="info-icon" data-tooltip="Frais réels de remise en état (Pneus, freins, transmission...)">?</span></label>
+            <label>Devis réparation si nécessaire (€ TTC) <span class="info-icon" data-tooltip="Frais réels de remise en état :&#10;- Pneus / Chambres&#10;- Freins&#10;- Transmission&#10;- Voilage etc.">?</span></label>
             <input type="number" id="devisReparation" value="0" oninput="calculer()">
         </div>
 
         <div class="calc-details">
             <p><strong>Prix HT d'origine :</strong> <span id="calcHT">0.00 €</span></p>
-            <p><strong>Prix d'achat B2B (coeff 1.8) HT :</strong> <span id="calcB2BHT">0.00 €</span></p>
-            <p><strong>Prix reprise occasion max. TTC :</strong> <span id="calcMaxOccasion">0.00 €</span></p>
             <hr style="border: 0.5px solid #eaeaea; margin: 10px 0;">
             <p><strong>Base Reprise calculée TTC :</strong> <span id="calcBaseReprise">0.00 €</span></p>
             <p class="calc-decote">
-                <strong>Décote Forfaitaire :</strong> - 200.00 € 
-                <span class="info-icon" data-tooltip="Comprend :&#10;- Frais de reconditionnement&#10;- Garantie commerciale 12 mois&#10;- Frais de transport&#10;- Frais de mise en vente et administratifs">?</span>
+                <span><strong>Décote Forfaitaire :</strong> - 200.00 € <span class="info-icon" data-tooltip="- Frais de reconditionnement&#10;- Garantie commerciale 12 mois&#10;- Frais de transport&#10;- Frais de mise en vente et administratifs">?</span></span>
             </p>
             <p class="calc-decote"><strong>Devis Réparation :</strong> <span id="calcRepa">- 0.00 €</span></p>
         </div>
@@ -225,25 +238,33 @@
     function handleTypeChange() {
         const type = document.getElementById('typeVelo').value;
         const tooltip = document.getElementById('dateTooltip');
+        const bromptonBox = document.getElementById('bromptonContainer');
         
-        // Gestion du VAE avec Pop-up
         if (type === 'vae') {
             document.getElementById('vaeModal').style.display = 'flex';
-            document.getElementById('typeVelo').value = ''; // Reset selection
+            document.getElementById('typeVelo').value = ''; 
             tooltip.style.display = 'none';
+            bromptonBox.style.display = 'none';
             return;
         }
 
-        // Gestion de la bulle d'info dynamique sur la Date d'achat
+        // Gestion du Pliant / Brompton
+        if (type === 'pliant') {
+            bromptonBox.style.display = 'block';
+        } else {
+            bromptonBox.style.display = 'none';
+            document.getElementById('isBrompton').checked = false;
+        }
+
         if (type !== "") {
-            tooltip.style.display = 'inline-block';
+            tooltip.style.display = 'inline-flex';
             let texteBulle = "";
             if (type === 'ville') {
-                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 50–60 %\n- 3–5 ans : 25–40 %\n- 6–10 ans : 10–20 %\n- > 10 ans : ~35 € (symbolique)";
+                texteBulle = "Base de reprise sur Prix Neuf :\n- 0–2 ans : 60 à 50%\n- 3–5 ans : 40 à 25%\n- 5–10 ans : 20 à 10%\n- +10 ans : ~35 € (Ferraille)";
             } else if (type === 'vtt') {
-                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 60–70 %\n- 3–5 ans : 40–50 %\n- 6–10 ans : 20–30 %\n- > 10 ans : ~20 € (pièces)";
+                texteBulle = "Base de reprise sur Prix Neuf :\n- 0–2 ans : 70 à 60%\n- 2–5 ans : 50 à 40%\n- 5–10 ans : 30 à 20%\n- +10 ans : ~20 € (Pièces)";
             } else if (type === 'pliant') {
-                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 40–50 %\n- 3–5 ans : 20–30 %\n- > 5 ans : Max 50 €";
+                texteBulle = "Base de reprise sur Prix Neuf :\n- 0–2 ans : 50 à 40%\n- 2–5 ans : 30 à 20%\n- +5 ans : Max 50 €\n\n(Note: Un Brompton suit la décote d'un Vélo de ville)";
             }
             tooltip.setAttribute('data-tooltip', texteBulle);
         } else {
@@ -256,71 +277,65 @@
         document.getElementById('vaeModal').style.display = 'none';
     }
 
+    // Fonction d'interpolation pour calculer le pourcentage exact selon l'âge au jour près
+    function calculerPourcentage(age, minAge, maxAge, maxPct, minPct) {
+        if (age <= minAge) return maxPct;
+        if (age >= maxAge) return minPct;
+        return maxPct - ((age - minAge) / (maxAge - minAge)) * (maxPct - minPct);
+    }
+
     function calculer() {
-        const type = document.getElementById('typeVelo').value;
+        let type = document.getElementById('typeVelo').value;
+        const isBrompton = document.getElementById('isBrompton').checked;
         const prixTTCNeuf = parseFloat(document.getElementById('prixTTCNeuf').value) || 0;
         const dateAchatVal = document.getElementById('dateAchat').value;
         const fraisRepa = parseFloat(document.getElementById('devisReparation').value) || 0;
 
-        // Met à jour l'affichage du devis en temps réel
         document.getElementById('calcRepa').innerText = "- " + fraisRepa.toFixed(2) + " €";
 
+        if (isBrompton) { type = 'ville'; } // Brompton est traité comme un vélo de ville
+
         if (prixTTCNeuf > 0 && dateAchatVal && type !== "") {
-            
-            // 1. Calculs intermédiaires
             const prixHTNeuf = prixTTCNeuf / 1.2;
-            const prixB2BHT = prixHTNeuf / 1.8;
-            const prixB2BTTC = prixB2BHT * 1.2;
-
-            // Affichage des calculs
             document.getElementById('calcHT').innerText = prixHTNeuf.toFixed(2) + " €";
-            document.getElementById('calcB2BHT').innerText = prixB2BHT.toFixed(2) + " €";
-            document.getElementById('calcMaxOccasion').innerText = prixB2BTTC.toFixed(2) + " €";
 
-            // 2. Calcul de l'âge
             const dateAchat = new Date(dateAchatVal);
-            const ageAnnees = (new Date() - dateAchat) / (1000 * 60 * 60 * 24 * 365);
+            const ageAnnees = (new Date() - dateAchat) / (1000 * 60 * 60 * 24 * 365.25);
             
             let coeffArgus = 0;
             let valeurPlancher = null;
 
-            // 3. Logique de décote par type et âge (pourcentage moyen appliqué)
             if (type === "ville") {
-                if (ageAnnees <= 2) coeffArgus = 0.55;       // 50-60%
-                else if (ageAnnees <= 5) coeffArgus = 0.35;  // 25-40%
-                else if (ageAnnees <= 10) coeffArgus = 0.15; // 10-20%
-                else valeurPlancher = 35;                    // >10 ans : ~35€
+                if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.60, 0.50);
+                else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.40, 0.25);
+                else if (ageAnnees > 5 && ageAnnees <= 10) coeffArgus = calculerPourcentage(ageAnnees, 5, 10, 0.20, 0.10);
+                else valeurPlancher = 35; // + 10 ans
             } 
             else if (type === "vtt") {
-                if (ageAnnees <= 2) coeffArgus = 0.65;       // 60-70%
-                else if (ageAnnees <= 5) coeffArgus = 0.45;  // 40-50%
-                else if (ageAnnees <= 10) coeffArgus = 0.25; // 20-30%
-                else valeurPlancher = 20;                    // >10 ans : ~20€
+                if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.70, 0.60);
+                else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.50, 0.40);
+                else if (ageAnnees > 5 && ageAnnees <= 10) coeffArgus = calculerPourcentage(ageAnnees, 5, 10, 0.30, 0.20);
+                else valeurPlancher = 20; // + 10 ans
             }
             else if (type === "pliant") {
-                if (ageAnnees <= 2) coeffArgus = 0.45;       // 40-50%
-                else if (ageAnnees <= 5) coeffArgus = 0.25;  // 20-30%
-                else valeurPlancher = 50;                    // >5 ans : max 50€
+                if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.50, 0.40);
+                else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.30, 0.20);
+                else valeurPlancher = 50; // + 5 ans
             }
 
-            // Définition de la Base de Reprise
-            baseRepriseTTC = (valeurPlancher !== null) ? valeurPlancher : (prixB2BTTC * coeffArgus);
+            // Calcul final
+            baseRepriseTTC = (valeurPlancher !== null) ? valeurPlancher : (prixTTCNeuf * coeffArgus);
             document.getElementById('calcBaseReprise').innerText = baseRepriseTTC.toFixed(2) + " €";
             
-            // 4. Calcul Final : Base - 200€ Forfait - Frais de réparation
             repriseFinale = Math.max(0, baseRepriseTTC - 200 - fraisRepa);
 
             document.getElementById('prixFinalDisplay').innerText = repriseFinale.toFixed(2) + " €";
             
-            // Activer le bouton
             document.getElementById('nextBtn').disabled = false;
             document.getElementById('nextBtn').style.opacity = "1";
             document.getElementById('dot1').classList.add('completed');
         } else {
-            // Remise à zéro visuelle si infos manquantes
             document.getElementById('calcHT').innerText = "0.00 €";
-            document.getElementById('calcB2BHT').innerText = "0.00 €";
-            document.getElementById('calcMaxOccasion').innerText = "0.00 €";
             document.getElementById('calcBaseReprise').innerText = "0.00 €";
             document.getElementById('prixFinalDisplay').innerText = "0.00 €";
             document.getElementById('nextBtn').disabled = true;
@@ -344,11 +359,14 @@
     function enregistrer() {
         const urlForm = "https://docs.google.com/forms/d/e/1FAIpQLSd1X7iMt3vCvkmfG4WlH9_-c66ILE-kL6AETBaPkU6FOaMjfQ/formResponse";
         
+        let typeAffiche = document.getElementById('typeVelo').options[document.getElementById('typeVelo').selectedIndex].text;
+        if(document.getElementById('isBrompton').checked) { typeAffiche += " (Brompton)"; }
+
         document.getElementById('p-magasin').innerText = document.getElementById('magasin').value;
         document.getElementById('p-client').innerText = document.getElementById('nom').value + " " + document.getElementById('prenom').value;
         document.getElementById('p-date-offre').innerText = new Date().toLocaleDateString();
         document.getElementById('p-velo').innerText = document.getElementById('marque').value + " " + document.getElementById('modele').value;
-        document.getElementById('p-type').innerText = document.getElementById('typeVelo').options[document.getElementById('typeVelo').selectedIndex].text;
+        document.getElementById('p-type').innerText = typeAffiche;
         document.getElementById('p-date-achat').innerText = document.getElementById('dateAchat').value;
         document.getElementById('p-prix-neuf').innerText = document.getElementById('prixTTCNeuf').value;
         document.getElementById('p-base').innerText = baseRepriseTTC.toFixed(2);
