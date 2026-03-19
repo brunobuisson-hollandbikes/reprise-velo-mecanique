@@ -12,7 +12,6 @@
         .header { text-align: center; margin-bottom: 20px; }
         .logo { width: 100%; max-width: 250px; display: block; margin: 0 auto 15px; }
 
-        /* Barre de progression */
         .progress-container { display: flex; justify-content: space-between; margin-bottom: 35px; position: relative; padding: 0 10px; }
         .progress-container::before { content: ''; background: #ddd; position: absolute; top: 15px; left: 0; height: 4px; width: 100%; z-index: 1; }
         .progress-step { width: 30px; height: 30px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; font-weight: bold; color: white; position: relative; }
@@ -35,19 +34,28 @@
         }
 
         input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
-        input[readonly] { background-color: #f9f9f9; cursor: not-allowed; color: #666; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
-        .result-card { background-color: var(--hb-blue); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
-        .result-value { font-size: 2.4rem; font-weight: bold; display: block; margin-top: 5px; }
+        .calc-details { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; margin-bottom: 15px; color: #444; }
+        .calc-details p { margin: 5px 0; display: flex; justify-content: space-between; }
+        .calc-details p strong { color: var(--hb-blue); }
+        .calc-decote { color: #d9534f; font-weight: bold; }
+
+        .result-card { background-color: var(--hb-blue); color: white; padding: 20px; border-radius: 8px; margin-top: 10px; text-align: center; }
+        .result-value { font-size: 2.2rem; font-weight: bold; display: block; margin-top: 5px; }
         
-        .button-group { display: flex; gap: 10px; margin-top: 25px; }
-        .btn { flex: 1; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; transition: 0.2s; text-decoration: none; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; transition: 0.2s; text-decoration: none; }
         .btn-next { background-color: var(--hb-green); color: white; }
         .btn-reset { background-color: #6c757d; color: white; }
         .btn-back { background-color: #f4f4f4; color: #333; }
-        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); margin-top: 10px; font-size: 0.8rem; display: block; }
+        .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); margin-top: 10px; font-size: 0.85rem; display: block; }
+        .btn-upway { background-color: #ff5e00; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; margin-top:15px; }
 
+        /* Modal (Pop-up) VAE */
+        #vaeModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; }
+        
         /* Style spécifique impression */
         #print-ticket { display: none; }
         @media print {
@@ -62,6 +70,16 @@
     </style>
 </head>
 <body>
+
+<div id="vaeModal">
+    <div class="modal-content">
+        <h2 style="color: #ff5e00; margin-top: 0;">Reprise VAE</h2>
+        <p>Pour l'estimation et la reprise des Vélos à Assistance Électrique, veuillez utiliser la plateforme de notre partenaire <strong>Upway</strong>.</p>
+        <a href="https://b2b.upway.app/" target="_blank" class="btn-upway">Ouvrir le Dashboard Upway</a>
+        <br><br>
+        <button class="btn btn-back" onclick="closeVaeModal()">Annuler & Retour</button>
+    </div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -79,8 +97,9 @@
         
         <div class="form-group">
             <label>Type de vélo</label>
-            <select id="typeVelo" onchange="calculer()">
-                <option value="ville">Vélo de ville (Classique)</option>
+            <select id="typeVelo" onchange="handleTypeChange()">
+                <option value="">-- Sélectionner la catégorie --</option>
+                <option value="ville">Vélo de ville (Classique, sans assistance)</option>
                 <option value="vtt">Vélo de course / VTT</option>
                 <option value="vae">Vélo à assistance électrique (VAE)</option>
                 <option value="pliant">Vélo pliant</option>
@@ -89,28 +108,37 @@
 
         <div class="grid">
             <div class="form-group">
-                <label>Date achat d'origine</label>
+                <label>Date achat d'origine 
+                    <span id="dateTooltip" class="info-icon" style="display: none;" data-tooltip="">?</span>
+                </label>
                 <input type="date" id="dateAchat" onchange="calculer()">
             </div>
             <div class="form-group">
-                <label>Prix neuf (€ TTC)</label>
-                <input type="number" id="prixTTCNeuf" placeholder="Ex: 1200" oninput="calculer()">
+                <label>Prix neuf facture (€ TTC)</label>
+                <input type="number" id="prixTTCNeuf" placeholder="Ex: 850" oninput="calculer()">
             </div>
         </div>
 
         <div class="form-group">
-            <label>Frais de remise en état (€ TTC) <span class="info-icon" data-tooltip="Cahier des charges : &#10; - Pneus / Chambres &#10; - Freins (patins/plaquettes) &#10; - Transmission (chaîne/cassette) &#10; - Voilage / Rayonnage &#10; - Éclairage">?</span></label>
+            <label>Devis réparation si nécessaire (€ TTC) <span class="info-icon" data-tooltip="Frais réels de remise en état (Pneus, freins, transmission...)">?</span></label>
             <input type="number" id="devisReparation" value="0" oninput="calculer()">
         </div>
 
-        <div style="font-size: 0.75rem; color: #777; margin-bottom: 10px; background: #fefefe; padding: 10px; border-radius: 5px; border: 1px solid #eee;">
-            Base HT : <span id="prixHTDisplay">0</span>€ | 
-            Coeff B2B (1.8) : <span id="prixB2BDisplay">0</span>€ | 
-            Décote Forfaitaire : -200€
+        <div class="calc-details">
+            <p><strong>Prix HT d'origine :</strong> <span id="calcHT">0.00 €</span></p>
+            <p><strong>Prix d'achat B2B (coeff 1.8) HT :</strong> <span id="calcB2BHT">0.00 €</span></p>
+            <p><strong>Prix reprise occasion max. TTC :</strong> <span id="calcMaxOccasion">0.00 €</span></p>
+            <hr style="border: 0.5px solid #eaeaea; margin: 10px 0;">
+            <p><strong>Base Reprise calculée TTC :</strong> <span id="calcBaseReprise">0.00 €</span></p>
+            <p class="calc-decote">
+                <strong>Décote Forfaitaire :</strong> - 200.00 € 
+                <span class="info-icon" data-tooltip="Comprend :&#10;- Frais de reconditionnement&#10;- Garantie commerciale 12 mois&#10;- Frais de transport&#10;- Frais de mise en vente et administratifs">?</span>
+            </p>
+            <p class="calc-decote"><strong>Devis Réparation :</strong> <span id="calcRepa">- 0.00 €</span></p>
         </div>
 
         <div class="result-card">
-            <span style="font-weight: bold; letter-spacing: 1px; font-size: 0.8rem;">OFFRE REPRISE (BON D'ACHAT HB)</span>
+            <span style="font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;">Prix reprise BON D'ACHAT HB € TTC</span>
             <span class="result-value" id="prixFinalDisplay">0.00 €</span>
         </div>
 
@@ -119,7 +147,8 @@
             <button class="btn btn-next" id="nextBtn" onclick="goToStep2()" disabled style="opacity: 0.5;">Suivant →</button>
         </div>
         
-        <div style="margin-top: 15px;">
+        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 5px;">
+            <a href="https://docs.google.com/document/d/11-49ROBzKyVPC0UHN13OYHFiUMuVrlBkncL97le9RHM/edit?usp=sharing" target="_blank" class="btn btn-link">📖 Procédure Reprise CycleSoftware</a>
             <a href="https://docs.google.com/spreadsheets/d/16ZqaaoAL9ltRXSFkW7Rmk_-g4QwA92sv4Qek_bNZNwQ/edit?gid=1978585441" target="_blank" class="btn btn-link">📊 Accéder aux Archives des reprises</a>
         </div>
     </div>
@@ -176,14 +205,14 @@
         <p>Prix d'achat d'origine : <span id="p-prix-neuf"></span> € TTC</p>
         <p>Base reprise calculée : <span id="p-base"></span> € TTC</p>
         <p style="color: #d9534f;">Décote Forfaitaire (Recond. + Garantie) : - 200.00 €</p>
-        <p style="color: #d9534f;">Frais de remise en état : - <span id="p-repa"></span> €</p>
+        <p style="color: #d9534f;">Devis réparation : - <span id="p-repa"></span> €</p>
     </div>
     <div class="ticket-total">
-        <div style="font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">BON D'ACHAT VALABLE 7 JOURS</div>
+        <div style="font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">PRIX REPRISE BON D'ACHAT HB € TTC</div>
         <div class="total-price-print" id="p-total"></div>
     </div>
     <div class="qr-print">
-        <p style="font-size: 0.7rem;">Scannez pour découvrir nos nouveaux modèles :</p>
+        <p style="font-size: 0.7rem;">Scannez pour découvrir nos vélos neufs :</p>
         <div id="qrcode" style="display: flex; justify-content: center; margin-top: 10px;"></div>
     </div>
     <p style="text-align: center; font-size: 0.8rem; margin-top: 20px;"><strong>Holland Bikes - Find Your Freedom</strong></p>
@@ -193,20 +222,60 @@
     let repriseFinale = 0;
     let baseRepriseTTC = 0;
 
+    function handleTypeChange() {
+        const type = document.getElementById('typeVelo').value;
+        const tooltip = document.getElementById('dateTooltip');
+        
+        // Gestion du VAE avec Pop-up
+        if (type === 'vae') {
+            document.getElementById('vaeModal').style.display = 'flex';
+            document.getElementById('typeVelo').value = ''; // Reset selection
+            tooltip.style.display = 'none';
+            return;
+        }
+
+        // Gestion de la bulle d'info dynamique sur la Date d'achat
+        if (type !== "") {
+            tooltip.style.display = 'inline-block';
+            let texteBulle = "";
+            if (type === 'ville') {
+                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 50–60 %\n- 3–5 ans : 25–40 %\n- 6–10 ans : 10–20 %\n- > 10 ans : ~35 € (symbolique)";
+            } else if (type === 'vtt') {
+                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 60–70 %\n- 3–5 ans : 40–50 %\n- 6–10 ans : 20–30 %\n- > 10 ans : ~20 € (pièces)";
+            } else if (type === 'pliant') {
+                texteBulle = "Impact sur Prix Neuf :\n- 0–2 ans : 40–50 %\n- 3–5 ans : 20–30 %\n- > 5 ans : Max 50 €";
+            }
+            tooltip.setAttribute('data-tooltip', texteBulle);
+        } else {
+            tooltip.style.display = 'none';
+        }
+        calculer();
+    }
+
+    function closeVaeModal() {
+        document.getElementById('vaeModal').style.display = 'none';
+    }
+
     function calculer() {
         const type = document.getElementById('typeVelo').value;
         const prixTTCNeuf = parseFloat(document.getElementById('prixTTCNeuf').value) || 0;
         const dateAchatVal = document.getElementById('dateAchat').value;
         const fraisRepa = parseFloat(document.getElementById('devisReparation').value) || 0;
 
-        if (prixTTCNeuf > 0 && dateAchatVal) {
-            // 1. Calcul de la base B2B
+        // Met à jour l'affichage du devis en temps réel
+        document.getElementById('calcRepa').innerText = "- " + fraisRepa.toFixed(2) + " €";
+
+        if (prixTTCNeuf > 0 && dateAchatVal && type !== "") {
+            
+            // 1. Calculs intermédiaires
             const prixHTNeuf = prixTTCNeuf / 1.2;
             const prixB2BHT = prixHTNeuf / 1.8;
             const prixB2BTTC = prixB2BHT * 1.2;
 
-            document.getElementById('prixHTDisplay').innerText = prixHTNeuf.toFixed(2);
-            document.getElementById('prixB2BDisplay').innerText = prixB2BTTC.toFixed(2);
+            // Affichage des calculs
+            document.getElementById('calcHT').innerText = prixHTNeuf.toFixed(2) + " €";
+            document.getElementById('calcB2BHT').innerText = prixB2BHT.toFixed(2) + " €";
+            document.getElementById('calcMaxOccasion').innerText = prixB2BTTC.toFixed(2) + " €";
 
             // 2. Calcul de l'âge
             const dateAchat = new Date(dateAchatVal);
@@ -215,41 +284,48 @@
             let coeffArgus = 0;
             let valeurPlancher = null;
 
-            // 3. Logique par catégorie
+            // 3. Logique de décote par type et âge (pourcentage moyen appliqué)
             if (type === "ville") {
-                if (ageAnnees <= 2) coeffArgus = 0.55;
-                else if (ageAnnees <= 5) coeffArgus = 0.35;
-                else if (ageAnnees <= 10) coeffArgus = 0.15;
-                else valeurPlancher = 35; 
+                if (ageAnnees <= 2) coeffArgus = 0.55;       // 50-60%
+                else if (ageAnnees <= 5) coeffArgus = 0.35;  // 25-40%
+                else if (ageAnnees <= 10) coeffArgus = 0.15; // 10-20%
+                else valeurPlancher = 35;                    // >10 ans : ~35€
             } 
             else if (type === "vtt") {
-                if (ageAnnees <= 2) coeffArgus = 0.65;
-                else if (ageAnnees <= 5) coeffArgus = 0.45;
-                else if (ageAnnees <= 10) coeffArgus = 0.25;
-                else valeurPlancher = 20;
-            }
-            else if (type === "vae") {
-                if (ageAnnees <= 2) coeffArgus = 0.55;
-                else if (ageAnnees <= 5) coeffArgus = 0.35;
-                else if (ageAnnees <= 8) coeffArgus = 0.15;
-                else valeurPlancher = 10; // Pièces uniquement
+                if (ageAnnees <= 2) coeffArgus = 0.65;       // 60-70%
+                else if (ageAnnees <= 5) coeffArgus = 0.45;  // 40-50%
+                else if (ageAnnees <= 10) coeffArgus = 0.25; // 20-30%
+                else valeurPlancher = 20;                    // >10 ans : ~20€
             }
             else if (type === "pliant") {
-                if (ageAnnees <= 2) coeffArgus = 0.45;
-                else if (ageAnnees <= 5) coeffArgus = 0.25;
-                else valeurPlancher = 50;
+                if (ageAnnees <= 2) coeffArgus = 0.45;       // 40-50%
+                else if (ageAnnees <= 5) coeffArgus = 0.25;  // 20-30%
+                else valeurPlancher = 50;                    // >5 ans : max 50€
             }
 
-            // Application du coefficient ou de la valeur plancher
+            // Définition de la Base de Reprise
             baseRepriseTTC = (valeurPlancher !== null) ? valeurPlancher : (prixB2BTTC * coeffArgus);
+            document.getElementById('calcBaseReprise').innerText = baseRepriseTTC.toFixed(2) + " €";
             
-            // 4. Calcul final : Base - 200€ forfait - Frais réels
+            // 4. Calcul Final : Base - 200€ Forfait - Frais de réparation
             repriseFinale = Math.max(0, baseRepriseTTC - 200 - fraisRepa);
 
             document.getElementById('prixFinalDisplay').innerText = repriseFinale.toFixed(2) + " €";
+            
+            // Activer le bouton
             document.getElementById('nextBtn').disabled = false;
             document.getElementById('nextBtn').style.opacity = "1";
             document.getElementById('dot1').classList.add('completed');
+        } else {
+            // Remise à zéro visuelle si infos manquantes
+            document.getElementById('calcHT').innerText = "0.00 €";
+            document.getElementById('calcB2BHT').innerText = "0.00 €";
+            document.getElementById('calcMaxOccasion').innerText = "0.00 €";
+            document.getElementById('calcBaseReprise').innerText = "0.00 €";
+            document.getElementById('prixFinalDisplay').innerText = "0.00 €";
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextBtn').style.opacity = "0.5";
+            document.getElementById('dot1').classList.remove('completed');
         }
     }
 
@@ -268,7 +344,6 @@
     function enregistrer() {
         const urlForm = "https://docs.google.com/forms/d/e/1FAIpQLSd1X7iMt3vCvkmfG4WlH9_-c66ILE-kL6AETBaPkU6FOaMjfQ/formResponse";
         
-        // Remplir le ticket d'impression
         document.getElementById('p-magasin').innerText = document.getElementById('magasin').value;
         document.getElementById('p-client').innerText = document.getElementById('nom').value + " " + document.getElementById('prenom').value;
         document.getElementById('p-date-offre').innerText = new Date().toLocaleDateString();
@@ -280,11 +355,9 @@
         document.getElementById('p-repa').innerText = document.getElementById('devisReparation').value;
         document.getElementById('p-total').innerText = repriseFinale.toFixed(2) + " €";
 
-        // Générer QR Code
         document.getElementById("qrcode").innerHTML = "";
         new QRCode(document.getElementById("qrcode"), { text: "https://www.hollandbikes.com/fr/110-velos", width: 80, height: 80 });
 
-        // Envoi Google Forms
         const formData = new FormData();
         formData.append("entry.680616715", document.getElementById('magasin').value);
         formData.append("entry.2016248799", document.getElementById('marque').value);
