@@ -2,10 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reprise Holland Bikes - V4</title>
     <link rel="icon" type="image/png" href="flavicon-hollandbikes.png">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
     <style>
         :root { --hb-blue: #003057; --hb-light-blue: #eef4f8; --hb-green: #28a745; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--hb-light-blue); padding: 20px; display: flex; justify-content: center; }
@@ -42,7 +48,11 @@
         }
         .info-icon:hover::after, .info-icon:hover::before { opacity: 1; visibility: visible; }
 
-        input[type="number"], input[type="date"], input[type="text"], input[type="email"], input[type="tel"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+        /* Modified input styling to better accommodate the picker */
+        input[type="number"], input[type="text"], input[type="email"], input[type="tel"], select, .flatpickr-input { 
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background-color: white;
+        }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         .calc-details { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; margin-bottom: 15px; color: #444; }
@@ -61,7 +71,6 @@
         .btn-link { background-color: white; color: var(--hb-blue); border: 1px solid var(--hb-blue); margin-top: 10px; font-size: 0.85rem; display: block; }
         .btn-upway { background-color: #ff5e00; color: white; border: none; padding: 12px 20px; font-size: 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; margin-top:15px; }
 
-        /* Modal (Pop-up) VAE */
         #vaeModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; }
         
@@ -77,6 +86,9 @@
             .qr-print { text-align: center; margin-top: 20px; }
         }
         #print-ticket { display: none; }
+
+        /* Fix for large touchscreens: prevent accidental zooming on input */
+        input { touch-action: manipulation; }
     </style>
 </head>
 <body>
@@ -128,7 +140,7 @@
                 <label>Date achat d'origine 
                     <span id="dateTooltip" class="info-icon" style="display: none;" data-tooltip="">?</span>
                 </label>
-                <input type="date" id="dateAchat" onchange="calculer()">
+                <input type="text" id="dateAchat" placeholder="Choisir une date..." readonly>
             </div>
             <div class="form-group">
                 <label>Prix neuf facture (€ TTC)</label>
@@ -236,6 +248,18 @@
     let repriseFinale = 0;
     let baseRepriseTTC = 0;
 
+    // Initialize Flatpickr for Touchscreens
+    const fp = flatpickr("#dateAchat", {
+        locale: "fr",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        disableMobile: "true", // Forced custom UI instead of native which is broken on Flip Pro
+        onChange: function(selectedDates, dateStr, instance) {
+            calculer();
+        }
+    });
+
     function handleTypeChange() {
         const type = document.getElementById('typeVelo').value;
         const tooltip = document.getElementById('dateTooltip');
@@ -249,7 +273,6 @@
             return;
         }
 
-        // Gestion du Pliant / Brompton
         if (type === 'pliant') {
             bromptonBox.style.display = 'block';
         } else {
@@ -278,7 +301,6 @@
         document.getElementById('vaeModal').style.display = 'none';
     }
 
-    // Fonction d'interpolation pour calculer le pourcentage exact selon l'âge au jour près
     function calculerPourcentage(age, minAge, maxAge, maxPct, minPct) {
         if (age <= minAge) return maxPct;
         if (age >= maxAge) return minPct;
@@ -294,7 +316,7 @@
 
         document.getElementById('calcRepa').innerText = "- " + fraisRepa.toFixed(2) + " €";
 
-        if (isBrompton) { type = 'ville'; } // Brompton est traité comme un vélo de ville
+        if (isBrompton) { type = 'ville'; }
 
         if (prixTTCNeuf > 0 && dateAchatVal && type !== "") {
             const prixHTNeuf = prixTTCNeuf / 1.2;
@@ -310,26 +332,24 @@
                 if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.60, 0.50);
                 else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.40, 0.25);
                 else if (ageAnnees > 5 && ageAnnees <= 10) coeffArgus = calculerPourcentage(ageAnnees, 5, 10, 0.20, 0.10);
-                else valeurPlancher = 35; // + 10 ans
+                else valeurPlancher = 35;
             } 
             else if (type === "vtt") {
                 if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.70, 0.60);
                 else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.50, 0.40);
                 else if (ageAnnees > 5 && ageAnnees <= 10) coeffArgus = calculerPourcentage(ageAnnees, 5, 10, 0.30, 0.20);
-                else valeurPlancher = 20; // + 10 ans
+                else valeurPlancher = 20;
             }
             else if (type === "pliant") {
                 if (ageAnnees <= 2) coeffArgus = calculerPourcentage(ageAnnees, 0, 2, 0.50, 0.40);
                 else if (ageAnnees > 2 && ageAnnees <= 5) coeffArgus = calculerPourcentage(ageAnnees, 2, 5, 0.30, 0.20);
-                else valeurPlancher = 50; // + 5 ans
+                else valeurPlancher = 50;
             }
 
-            // Calcul final
             baseRepriseTTC = (valeurPlancher !== null) ? valeurPlancher : (prixTTCNeuf * coeffArgus);
             document.getElementById('calcBaseReprise').innerText = baseRepriseTTC.toFixed(2) + " €";
             
             repriseFinale = Math.max(0, baseRepriseTTC - 200 - fraisRepa);
-
             document.getElementById('prixFinalDisplay').innerText = repriseFinale.toFixed(2) + " €";
             
             document.getElementById('nextBtn').disabled = false;
